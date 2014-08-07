@@ -32,7 +32,7 @@ This is an ideal problem to solve with an abstraction layer to serve those typic
 
 *tl;dr:* __BKCameraController is usable in the simulator, and doesn't block the main (UI) thread.__
 
-**Q:** My photos are rotated weirdly! What gives?
+**Q:** My photos are rotated weirdly! What gives?  
 **A:** Well, the camera doesn't necessarily return the photo rotated with the direction "up" necessarily what you'd expect. It's not currently clear what the best approach to this is -- i.e. internally correct, offer a method in the public API to perform the transformation, or leave it to the developer -- but this snippet of code may prove useful for common use:
 
 ```objc
