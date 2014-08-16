@@ -18,4 +18,26 @@
  */
 + (void)setFakeImageData:(NSData *)fakeImageData;
 
+/**
+ Getter for the fake image color used by the simulator.
+
+ @return The fake image color used by the simulator.
+ */
++ (CIColor *)fakeImageColor;
+
+/**
+ Setter for the fake image  color used by the simulator
+
+ @param fakeImageColor The fake image color to be used by the simulator.
+ */
++ (void)setFakeImageData:(NSData *)fakeImageColor;
+
+/**
+ Setter for fake image color from UIColor
+ 
+ @param fakeImageColor UIColor
+ */
++ (void)setFakeImageColorFromUIColor:(UIColor *)fakeImageColor;
+
+
 @end

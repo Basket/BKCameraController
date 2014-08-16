@@ -6,6 +6,7 @@
 @import CoreImage.CIImage;
 @import ObjectiveC.runtime;
 @import UIKit.UIDevice;
+@import CoreImage.CIColor;
 
 @interface BKCameraController ()
 @property (nonatomic, strong) dispatch_queue_t avQueue;
@@ -31,7 +32,20 @@ void __swizzled_captureAssetWithCompletion(BKCameraController *self, SEL _cmd, a
 
 void __swizzled_captureSampleWithCompletion(BKCameraController *self, SEL _cmd, ciimage_capture_completion_t completion) {
     dispatch_async(((BKCameraController *)self).avQueue, ^{
-        CIImage *image = [CIImage imageWithData:[BKCameraController fakeImageData]];
+        CIImage *image;
+        if ([BKCameraController fakeImageData]) {
+            image = [CIImage imageWithData:[BKCameraController fakeImageData]];
+        } else {
+            CIColor *fakeImageColor = [BKCameraController fakeImageColor];
+            if (!fakeImageColor) {
+                CGFloat hue = ( arc4random() % 256 / 256.0 );  //  0.0 to 1.0
+                CGFloat saturation = ( arc4random() % 128 / 256.0 ) + 0.5;  //  0.5 to 1.0, away from white
+                CGFloat brightness = ( arc4random() % 128 / 256.0 ) + 0.5;  //  0.5 to 1.0, away from black
+                UIColor *color = [UIColor colorWithHue:hue saturation:saturation brightness:brightness alpha:1];
+                fakeImageColor = [CIColor colorWithCGColor:color.CGColor];
+            }
+            image = [CIImage imageWithColor:fakeImageColor];
+        }
 
         dispatch_async(dispatch_get_main_queue(), ^{
             completion(image, nil);
@@ -66,6 +80,24 @@ static NSData *_fakeImageData;
 + (void)setFakeImageData:(NSData *)fakeImageData;
 {
     _fakeImageData = fakeImageData;
+}
+
+static CIColor *_fakeImageColor;
+
++ (CIColor *)fakeImageColor
+{
+    return _fakeImageColor;
+}
+
++ (void)setFakeImageColor:(CIColor *)fakeImageColor
+{
+    _fakeImageColor = fakeImageColor;
+}
+
++ (void)setFakeImageColorFromUIColor:(UIColor *)fakeImageColor
+{
+
+    _fakeImageColor = [CIColor colorWithCGColor:fakeImageColor.CGColor];
 }
 
 @end
