@@ -53,8 +53,8 @@
     NSAssert(![NSThread isMainThread], @"Method should not be run on the main thread");
     NSAssert(!_sessionInitialized, @"Session already initialized!");
 
-    if ([_session canSetSessionPreset:AVCaptureSessionPresetHigh]) {
-        _session.sessionPreset = AVCaptureSessionPresetHigh;
+    if ([_session canSetSessionPreset:AVCaptureSessionPresetPhoto]) {
+        _session.sessionPreset = AVCaptureSessionPresetPhoto;
     }
 
     _stillImageOutput = [[AVCaptureStillImageOutput alloc] init];
