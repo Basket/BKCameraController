@@ -2,11 +2,10 @@
 
 #import "BKCameraController+Simulator.h"
 
-@import AssetsLibrary.ALAssetsLibrary;
-@import CoreImage.CIImage;
-@import ObjectiveC.runtime;
-@import UIKit.UIDevice;
-@import CoreImage.CIColor;
+@import AssetsLibrary;
+@import CoreImage;
+@import ObjectiveC;
+@import UIKit;
 
 @interface BKCameraController ()
 @property (nonatomic, strong) dispatch_queue_t avQueue;
@@ -96,7 +95,6 @@ static CIColor *_fakeImageColor;
 
 + (void)setFakeImageColorFromUIColor:(UIColor *)fakeImageColor
 {
-
     _fakeImageColor = [CIColor colorWithCGColor:fakeImageColor.CGColor];
 }
 

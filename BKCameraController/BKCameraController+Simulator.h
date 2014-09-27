@@ -2,6 +2,9 @@
 
 #import "BKCameraController.h"
 
+@class CIColor;
+@class UIColor;
+
 @interface BKCameraController (Simulator)
 
 /**
@@ -30,7 +33,7 @@
 
  @param fakeImageColor The fake image color to be used by the simulator.
  */
-+ (void)setFakeImageData:(NSData *)fakeImageColor;
++ (void)setFakeImageColor:(NSData *)fakeImageColor;
 
 /**
  Setter for fake image color from UIColor
