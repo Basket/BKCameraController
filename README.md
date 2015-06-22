@@ -101,7 +101,3 @@ Relegating `CMSampleBuffer` and `CVPixelBuffer` to implementation details of the
 **Q:** It doesn't do X!  
 **Q:** The way you structured your API sucks!  
 **A:** This was built to make taking photos smooth. If you have a specific need, I'd be happy to incorporate that input into future revisions. If you have any suggestions or bug reports, please feel free to file an issue on GitHub. And if there's any concrete way to improve the API, I'd love to hear your input!
-
-## Documentation
-
-BKCameraController is fully documented. Check out the included docset!
