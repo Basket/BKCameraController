@@ -124,6 +124,8 @@ typedef void (^asset_capture_completion_t)(NSURL *assetURL, NSError *error);
 - (void)captureSampleWithCompletion:(ciimage_capture_completion_t)completion;
 @end
 
+#pragma mark - Delegate
+
 /**
  The delegate of a <BKCameraController> object must adopt the <BKCameraControllerDelegate> protocol.
  */
@@ -151,6 +153,14 @@ typedef void (^asset_capture_completion_t)(NSURL *assetURL, NSError *error);
  @param cameraController The camera controller whose subject area changed.
  */
 - (void)cameraControllerSubjectAreaDidChange:(BKCameraController *)cameraController;
+
+#pragma mark Session Lifecycle Events
+
+- (void)cameraController:(BKCameraController *)cameraController sessionDidStopRunning:(AVCaptureSession *)session;
+- (void)cameraController:(BKCameraController *)cameraController sessionDidStartRunning:(AVCaptureSession *)session;
+- (void)cameraController:(BKCameraController *)cameraController session:(AVCaptureSession *)session didError:(NSError *)error;
+- (void)cameraController:(BKCameraController *)cameraController sessionWasInterrupted:(AVCaptureSession *)session;
+- (void)cameraController:(BKCameraController *)cameraController sessionInterruptionEnded:(AVCaptureSession *)session;
 
 @end
 

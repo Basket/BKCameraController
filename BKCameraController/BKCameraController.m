@@ -30,9 +30,29 @@
         _sessionPreset = [preset copy];
 
         [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(_subjectAreaDidChange:)
+                                                 selector:@selector(_forwardNotificationToDelegate:)
                                                      name:AVCaptureDeviceSubjectAreaDidChangeNotification
-                                                   object:nil];
+                                                   object:AVCaptureDeviceSubjectAreaDidChangeNotification];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(_forwardNotificationToDelegate:)
+                                                     name:AVCaptureSessionRuntimeErrorNotification
+                                                   object:AVCaptureSessionRuntimeErrorNotification];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(_forwardNotificationToDelegate:)
+                                                     name:AVCaptureSessionDidStartRunningNotification
+                                                   object:AVCaptureSessionDidStartRunningNotification];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(_forwardNotificationToDelegate:)
+                                                     name:AVCaptureSessionDidStopRunningNotification
+                                                   object:AVCaptureSessionDidStopRunningNotification];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(_forwardNotificationToDelegate:)
+                                                     name:AVCaptureSessionWasInterruptedNotification
+                                                   object:AVCaptureSessionWasInterruptedNotification];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(_forwardNotificationToDelegate:)
+                                                     name:AVCaptureSessionInterruptionEndedNotification
+                                                   object:AVCaptureSessionInterruptionEndedNotification];
     }
     return self;
 }
@@ -111,13 +131,40 @@
     }
 }
 
-#pragma mark - Subject area change
+#pragma mark - Notification forwarding
 
-- (void)_subjectAreaDidChange:(NSNotification *)notification
+- (void)_forwardNotificationToDelegate:(NSNotification *)notification
 {
-    NSLog(@"NSNotification: \n\tname=%@,\n\tobject=%@,\n\tuserInfo=%@", notification.name, notification.object, notification.userInfo);
-    if ([self.delegate respondsToSelector:@selector(cameraControllerSubjectAreaDidChange:)]) {
-        [self.delegate cameraControllerSubjectAreaDidChange:self];
+    NSLog(@"Camera NSNotification: \n\tname=%@,\n\tobject=%@,\n\tuserInfo=%@", notification.name, notification.object, notification.userInfo);
+
+    id object = notification.object;
+
+    if ([AVCaptureDeviceSubjectAreaDidChangeNotification isEqual:object]) {
+        if ([self.delegate respondsToSelector:@selector(cameraControllerSubjectAreaDidChange:)]) {
+            [self.delegate cameraControllerSubjectAreaDidChange:self];
+        }
+    } else if ([AVCaptureSessionRuntimeErrorNotification isEqual:object]) {
+        NSError *error = notification.userInfo[AVCaptureSessionErrorKey];
+
+        if ([self.delegate respondsToSelector:@selector(cameraController:session:didError:)]) {
+            [self.delegate cameraController:self session:self.session didError:error];
+        }
+    } else if ([AVCaptureSessionDidStartRunningNotification isEqual:object]) {
+        if ([self.delegate respondsToSelector:@selector(cameraController:sessionDidStartRunning:)]) {
+            [self.delegate cameraController:self sessionDidStartRunning:self.session];
+        }
+    } else if ([AVCaptureSessionDidStopRunningNotification isEqual:object]) {
+        if ([self.delegate respondsToSelector:@selector(cameraController:sessionDidStopRunning:)]) {
+            [self.delegate cameraController:self sessionDidStopRunning:self.session];
+        }
+    } else if ([AVCaptureSessionWasInterruptedNotification isEqual:object]) {
+        if ([self.delegate respondsToSelector:@selector(cameraController:sessionWasInterrupted:)]) {
+            [self.delegate cameraController:self sessionWasInterrupted:self.session];
+        }
+    } else if ([AVCaptureSessionInterruptionEndedNotification isEqual:object]) {
+        if ([self.delegate respondsToSelector:@selector(cameraController:sessionInterruptionEnded:)]) {
+            [self.delegate cameraController:self sessionInterruptionEnded:self.session];
+        }
     }
 }
 
