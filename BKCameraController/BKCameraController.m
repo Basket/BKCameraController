@@ -1,79 +1,63 @@
 // Copyright 2014-present 650 Industries. All rights reserved.
 
-#import "BKCameraController.h"
+#import <BKCameraController/BKCameraController.h>
+#import <BKCameraController/BKCameraController_Internal.h>
 
-@import AssetsLibrary.ALAssetsLibrary;
-@import AVFoundation.AVCaptureInput;
-@import AVFoundation.AVCaptureOutput;
-@import AVFoundation.AVMediaFormat;
-@import AVFoundation.AVVideoSettings;
-@import CoreImage.CIImage;
-@import ImageIO.CGImageProperties;
-
-@interface BKCameraController ()
-@property (nonatomic, strong) dispatch_queue_t avQueue;
-@end
+#import <AssetsLibrary/AssetsLibrary.h>
+#import <AVFoundation/AVFoundation.h>
+#import <CoreImage/CoreImage.h>
+#import <ImageIO/ImageIO.h>
 
 @implementation BKCameraController {
-    BOOL _autoFlashEnabled;
-
-    BOOL _sessionInitialized;
-    BOOL _inputIsCycling;
-
-    AVCaptureDeviceInput *_activeDeviceInput;
-    AVCaptureStillImageOutput *_stillImageOutput;
+    NSString *_sessionPreset;
 
     AVCaptureFlashMode _avFlashMode; // avQueue-affined flash mode
     AVCaptureDevicePosition _avPosition; // avQueue-affined device position
 }
 
 - (instancetype)initWithInitialPosition:(AVCaptureDevicePosition)position
-                       autoFlashEnabled:(BOOL)enabled
+                       autoFlashEnabled:(BOOL)autoFlashEnabled
+     subjectAreaChangeMonitoringEnabled:(BOOL)subjectAreaChangeMonitoringEnabled
+                          sessionPreset:(NSString *)preset
 {
     if (self = [super init]) {
-        _autoFlashEnabled = enabled;
-
-        _avQueue = dispatch_queue_create("net.sixfivezero.av", DISPATCH_QUEUE_SERIAL);
+        _avQueue = dispatch_queue_create("com.github.basket.bkcameracontroller.avqueue", DISPATCH_QUEUE_SERIAL);
+        _session = [[AVCaptureSession alloc] init];
 
         _position = position;
-        _session = [[AVCaptureSession alloc] init];
+        _autoFlashEnabled = autoFlashEnabled;
+        _subjectAreaChangeMonitoringEnabled = subjectAreaChangeMonitoringEnabled;
+        _sessionPreset = [preset copy];
+
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(_subjectAreaDidChange:)
+                                                     name:AVCaptureDeviceSubjectAreaDidChangeNotification
+                                                   object:nil];
     }
     return self;
+}
+
+- (instancetype)initWithInitialPosition:(AVCaptureDevicePosition)position
+                       autoFlashEnabled:(BOOL)autoFlashEnabled
+{
+    return [self initWithInitialPosition:position autoFlashEnabled:autoFlashEnabled subjectAreaChangeMonitoringEnabled:NO sessionPreset:AVCaptureSessionPresetPhoto];
 }
 
 - (instancetype)init
 {
-    if (self = [self initWithInitialPosition:AVCaptureDevicePositionBack autoFlashEnabled:NO]) {
-    }
-    return self;
+    return [self initWithInitialPosition:AVCaptureDevicePositionBack autoFlashEnabled:NO];
 }
 
-- (void)_initialSessionSetup
+- (void)dealloc
 {
-    NSAssert(![NSThread isMainThread], @"Method should not be run on the main thread");
-    NSAssert(!_sessionInitialized, @"Session already initialized!");
-
-    if ([_session canSetSessionPreset:AVCaptureSessionPresetPhoto]) {
-        _session.sessionPreset = AVCaptureSessionPresetPhoto;
-    }
-
-    _stillImageOutput = [[AVCaptureStillImageOutput alloc] init];
-    [_session addOutput:_stillImageOutput];
-
-    NSError *error = nil;
-    AVCaptureDevice *initialDevice = [self _captureDeviceForPosition:_position];
-    AVCaptureDeviceInput *input = [AVCaptureDeviceInput deviceInputWithDevice:initialDevice error:&error];
-    NSAssert(TARGET_IPHONE_SIMULATOR || error == nil, @"Error getting device input");
-
-    [self _updateSessionWithInput:input error:&error];
-    NSAssert(TARGET_IPHONE_SIMULATOR || error == nil, @"Error updating session with input");
-
-    _sessionInitialized = YES;
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
+
+#pragma mark - Capture session lifecycle methods
 
 - (void)startCaptureSession
 {
-    dispatch_async(_avQueue, ^{
+    dispatch_async(self.avQueue, ^{
         if (!_sessionInitialized) {
             [self _initialSessionSetup];
         }
@@ -83,9 +67,58 @@
 
 - (void)stopCaptureSession
 {
-    dispatch_async(_avQueue, ^{
+    dispatch_async(self.avQueue, ^{
         [_session stopRunning];
     });
+}
+
+#pragma mark - Initialization
+
+- (void)_initialSessionSetup
+{
+    NSAssert(![NSThread isMainThread], @"Method should not be run on the main thread");
+    NSAssert(!_sessionInitialized, @"Session already initialized!");
+
+    if ([_session canSetSessionPreset:_sessionPreset]) {
+        _session.sessionPreset = _sessionPreset;
+    }
+
+    [self initializeOutputs];
+    [self initializeInputs];
+
+    _sessionInitialized = YES;
+}
+
+- (NSError *)initializeInputs
+{
+    NSError *error = nil;
+    AVCaptureDevice *initialDevice = [self _captureDeviceForPosition:_position];
+    AVCaptureDeviceInput *input = [AVCaptureDeviceInput deviceInputWithDevice:initialDevice error:&error];
+
+    NSAssert(TARGET_IPHONE_SIMULATOR || error == nil, @"Error getting device input");
+
+    [self _updateSessionWithInput:input error:&error];
+    NSAssert(TARGET_IPHONE_SIMULATOR || error == nil, @"Error updating session with input");
+
+    return error;
+}
+
+- (void)initializeOutputs
+{
+    if (self.stillsEnabled) {
+        _stillImageOutput = [[AVCaptureStillImageOutput alloc] init];
+        [_session addOutput:_stillImageOutput];
+    }
+}
+
+#pragma mark - Subject area change
+
+- (void)_subjectAreaDidChange:(NSNotification *)notification
+{
+    NSLog(@"NSNotification: \n\tname=%@,\n\tobject=%@,\n\tuserInfo=%@", notification.name, notification.object, notification.userInfo);
+    if ([self.delegate respondsToSelector:@selector(cameraControllerSubjectAreaDidChange:)]) {
+        [self.delegate cameraControllerSubjectAreaDidChange:self];
+    }
 }
 
 #pragma mark - Camera control
@@ -104,35 +137,59 @@
 - (BOOL)_updateSessionWithInput:(AVCaptureDeviceInput *)newInput error:(NSError * __autoreleasing *)error
 {
     NSAssert(![NSThread isMainThread], @"Method should not be run on the main thread");
-    [_session beginConfiguration];
-    if (_activeDeviceInput) {
-        [_session removeInput:_activeDeviceInput];
+    [self.session beginConfiguration];
+    if (self.activeDeviceInput) {
+        [self.session removeInput:self.activeDeviceInput];
     }
 
-    if (![_session canAddInput:newInput]) {
+    if (![self.session canAddInput:newInput]) {
         // Roll back the changes
-        if (_activeDeviceInput) {
-            [_session addInput:_activeDeviceInput];
+        if (self.activeDeviceInput) {
+            [self.session addInput:self.activeDeviceInput];
         }
-        [_session commitConfiguration];
+        [self.session commitConfiguration];
         NSString *message = [NSString stringWithFormat:@"Something went wrong when switching to the %@", newInput.device.localizedName];
         if (error) {
-            *error = [NSError errorWithDomain:@"net.sixfivezero" code:0 userInfo:@{NSLocalizedDescriptionKey: message}];
+            *error = [NSError errorWithDomain:@"com.github.basket.bkcameracontroller"
+                                         code:0
+                                     userInfo:@{
+                                                NSLocalizedDescriptionKey: message,
+                                                NSUnderlyingErrorKey: *error}];
         }
         return YES;
     }
 
-    [_session addInput:newInput];
+    [self.session addInput:newInput];
     _activeDeviceInput = newInput;
-    [_session commitConfiguration];
+    [self.session commitConfiguration];
     return NO;
+}
+
+
+- (void)_updateSubjectAreaChangeMonitoringEnabled:(BOOL)subjectAreaChangeMonitoringEnabled
+{
+    NSError *error = nil;
+    AVCaptureDevice *camera = [self.activeDeviceInput device];
+    [camera lockForConfiguration:&error];
+    if (error) {
+        NSLog(@"ERROR: problem updating subject area change monitoring flag: %@", error);
+        // TODO: handle error
+        return;
+    }
+    camera.subjectAreaChangeMonitoringEnabled = subjectAreaChangeMonitoringEnabled;
+    [camera unlockForConfiguration];
 }
 
 - (void)autoAdjustCameraToPoint:(CGPoint)point
 {
-    dispatch_async(_avQueue, ^{
+    [self autoAdjustCameraToPoint:point exposureMode:AVCaptureExposureModeContinuousAutoExposure focusMode:AVCaptureFocusModeContinuousAutoFocus whiteBalanceMode:AVCaptureWhiteBalanceModeContinuousAutoWhiteBalance];
+}
+
+- (void)autoAdjustCameraToPoint:(CGPoint)point exposureMode:(AVCaptureExposureMode)exposureMode focusMode:(AVCaptureFocusMode)focusMode whiteBalanceMode:(AVCaptureWhiteBalanceMode)whiteBalanceMode
+{
+    dispatch_async(self.avQueue, ^{
         NSError *error = nil;
-        AVCaptureDevice *camera = [_activeDeviceInput device];
+        AVCaptureDevice *camera = [self.activeDeviceInput device];
         [camera lockForConfiguration:&error];
         if (error) {
             NSLog(@"ERROR: problem adjusting camera: %@", error);
@@ -145,14 +202,14 @@
         if (camera.isExposurePointOfInterestSupported) {
             camera.exposurePointOfInterest = point;
         }
-        if ([camera isFocusModeSupported:AVCaptureFocusModeContinuousAutoFocus]) {
-            camera.focusMode = AVCaptureFocusModeContinuousAutoFocus;
+        if ([camera isFocusModeSupported:focusMode]) {
+            camera.focusMode = focusMode;
         }
-        if ([camera isExposureModeSupported:AVCaptureExposureModeContinuousAutoExposure]) {
-            camera.exposureMode = AVCaptureExposureModeContinuousAutoExposure;
+        if ([camera isExposureModeSupported:exposureMode]) {
+            camera.exposureMode = exposureMode;
         }
-        if ([camera isWhiteBalanceModeSupported:AVCaptureWhiteBalanceModeContinuousAutoWhiteBalance]) {
-            camera.whiteBalanceMode = AVCaptureWhiteBalanceModeContinuousAutoWhiteBalance;
+        if ([camera isWhiteBalanceModeSupported:whiteBalanceMode]) {
+            camera.whiteBalanceMode = whiteBalanceMode;
         }
         [camera unlockForConfiguration];
     });
@@ -160,8 +217,8 @@
 
 - (void)cycleFlashMode
 {
-    dispatch_async(_avQueue, ^{
-        AVCaptureDevice *camera = _activeDeviceInput.device;
+    dispatch_async(self.avQueue, ^{
+        AVCaptureDevice *camera = self.activeDeviceInput.device;
         AVCaptureFlashMode currentFlashMode = camera.flashMode;
         AVCaptureFlashMode nextFlashMode = AVCaptureFlashModeOff;
 
@@ -172,7 +229,7 @@
                 }
                 break;
             case AVCaptureFlashModeOn:
-                if ([camera isFlashModeSupported:AVCaptureFlashModeAuto] && _autoFlashEnabled) {
+                if ([camera isFlashModeSupported:AVCaptureFlashModeAuto] && self.autoFlashEnabled) {
                     nextFlashMode = AVCaptureFlashModeAuto;
                 } else {
                     nextFlashMode = AVCaptureFlashModeOff;
@@ -235,13 +292,14 @@
     }
 
     _inputIsCycling = YES;
+    BOOL savedSubjectAreaChangeMonitoringEnabled = _subjectAreaChangeMonitoringEnabled;
 
     if ([_delegate respondsToSelector:@selector(cameraControllerWillCyclePosition:)]) {
         [_delegate cameraControllerWillCyclePosition:self];
     }
 
-    dispatch_async(_avQueue, ^{
-        AVCaptureDevice *camera = _activeDeviceInput.device;
+    dispatch_async(self.avQueue, ^{
+        AVCaptureDevice *camera = self.activeDeviceInput.device;
         AVCaptureDevicePosition currentPosition = camera.position;
         AVCaptureDevicePosition nextPosition = AVCaptureDevicePositionUnspecified;
 
@@ -269,6 +327,8 @@
             NSLog(@"ERROR: problem cycling position: %@", error);
             return;
         }
+
+        [self _updateSubjectAreaChangeMonitoringEnabled:savedSubjectAreaChangeMonitoringEnabled];
 
         AVCaptureFlashMode newFlashMode = newCamera.flashMode;
         BOOL flashCapable = YES;
@@ -302,7 +362,7 @@
 
 - (void)captureAssetWithCompletion:(asset_capture_completion_t)completion
 {
-    dispatch_async(_avQueue, ^{
+    dispatch_async(self.avQueue, ^{
         AVCaptureConnection *connection = [_stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
         _stillImageOutput.outputSettings = @{AVVideoCodecKey: AVVideoCodecJPEG};
         [_stillImageOutput captureStillImageAsynchronouslyFromConnection:connection
@@ -343,7 +403,7 @@
 
 - (void)captureSampleWithCompletion:(ciimage_capture_completion_t)completion
 {
-    dispatch_async(_avQueue, ^{
+    dispatch_async(self.avQueue, ^{
         AVCaptureConnection *connection = [_stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
         _stillImageOutput.outputSettings = @{(NSString *)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA)};
         [_stillImageOutput captureStillImageAsynchronouslyFromConnection:connection

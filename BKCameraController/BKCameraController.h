@@ -1,8 +1,8 @@
 // Copyright 2014-present 650 Industries. All rights reserved.
 
-@import AVFoundation.AVCaptureDevice;
-@import AVFoundation.AVCaptureSession;
+#import <AVFoundation/AVCaptureDevice.h>
 
+@class AVCaptureSession;
 @class CIImage;
 @protocol BKCameraControllerDelegate;
 
@@ -18,7 +18,7 @@ typedef void (^asset_capture_completion_t)(NSURL *assetURL, NSError *error);
 @interface BKCameraController : NSObject
 
 /**
- The receiver’s delegate or nil if it doesn’t have a delegate.
+ The receiver's delegate or nil if it doesn't have a delegate.
  
  @discussion For a list of methods your delegate object can implement, see [BKCameraControllerDelegate Protocol Reference](BKCameraControllerDelegate)
  */
@@ -32,18 +32,29 @@ typedef void (^asset_capture_completion_t)(NSURL *assetURL, NSError *error);
 @property (nonatomic, assign, readonly) AVCaptureFlashMode flashMode;
 /** Whether the current camera has the capability to flash. */
 @property (nonatomic, assign, readonly) BOOL flashCapable;
-
+/** Whether the session should monitor subject area changes. See <AVCaptureDevice> */
+@property (nonatomic, assign, readonly) BOOL subjectAreaChangeMonitoringEnabled;
 /** @name Initializing a BKCameraController object  */
 
 /**
  Initializes the camera controller using the specified starting parameters.
  
  @param position The position used to select the initial capture device used by the camera controller. Defaults to `AVCaptureDevicePositionBack`.
- @param enabled YES if the camera controller should include `AVCaptureFlashModeAuto` when cycling the flash mode. Defaults to `NO`.
+ @param autoFlashEnabled YES if the camera controller should include `AVCaptureFlashModeAuto` when cycling the flash mode. Defaults to `NO`.
+ @param subjectAreaChangeMonitoringEnabled YES if the camera controller should monitor the subject area for changes. See <AVCaptureDevice>.
+ @param sessionPreset The session quality preset with which to capture the video.
  @return An initialized `BKCameraController` instance.
  */
 - (instancetype)initWithInitialPosition:(AVCaptureDevicePosition)position
-                       autoFlashEnabled:(BOOL)enabled __attribute__((objc_designated_initializer));
+                       autoFlashEnabled:(BOOL)autoFlashEnabled
+     subjectAreaChangeMonitoringEnabled:(BOOL)subjectAreaChangeMonitoringEnabled
+                          sessionPreset:(NSString *)preset NS_DESIGNATED_INITIALIZER;
+
+/**
+ Convenience initializer that defaults the session preset to `AVCaptureSessionPresetPhoto`.
+ */
+- (instancetype)initWithInitialPosition:(AVCaptureDevicePosition)position
+                       autoFlashEnabled:(BOOL)autoFlashEnabled;
 
 /** @name Starting/Stopping Capture Session State  */
 
@@ -69,6 +80,16 @@ typedef void (^asset_capture_completion_t)(NSURL *assetURL, NSError *error);
  @param point The point to set the exposure and focus.
  */
 - (void)autoAdjustCameraToPoint:(CGPoint)point;
+
+/**
+ Sets the focus and exposure point to the specified point and the specified modes for adjusting them, if supported.
+
+ @param point The point to set the exposure and focus.
+ @param exposureMode the exposure mode.
+ @param focusMode the focus mode.
+ @param whiteBalanceMode the white balance mode.
+ */
+- (void)autoAdjustCameraToPoint:(CGPoint)point exposureMode:(AVCaptureExposureMode)exposureMode focusMode:(AVCaptureFocusMode)focusMode whiteBalanceMode:(AVCaptureWhiteBalanceMode)whiteBalanceMode;
 
 /**
  Cycles through supported flash modes. Skips `AVCaptureFlashModeAuto` if the receiver was initialized with `autoFlashEnabled` set to `NO`.
@@ -123,6 +144,13 @@ typedef void (^asset_capture_completion_t)(NSURL *assetURL, NSError *error);
  @param cameraController The camera controller that cycled position.
  */
 - (void)cameraControllerDidCyclePosition:(BKCameraController *)cameraController;
+
+/**
+ Tells the delegate that the subject area in the camera changed
+
+ @param cameraController The camera controller whose subject area changed.
+ */
+- (void)cameraControllerSubjectAreaDidChange:(BKCameraController *)cameraController;
 
 @end
 

@@ -1,6 +1,6 @@
 // Copyright 2014-present 650 Industries. All rights reserved.
 
-#import "BKCameraController+Simulator.h"
+#import <BKCameraController/BKCameraController+Simulator.h>
 
 @import AssetsLibrary;
 @import CoreImage;

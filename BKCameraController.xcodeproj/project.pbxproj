@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		6B4F31B8198B10C7009B4667 /* BKCameraController+Simulator.m in Sources */ = {isa = PBXBuildFile; fileRef = 6B4F31B7198B10C7009B4667 /* BKCameraController+Simulator.m */; };
+		6B6E990B1B38C57300BEEFB6 /* BKVideoController.m in Sources */ = {isa = PBXBuildFile; fileRef = 6B6E990A1B38C57300BEEFB6 /* BKVideoController.m */; };
+		6B6E990D1B39D0BB00BEEFB6 /* BKVideoController.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 6B6E99091B38C57300BEEFB6 /* BKVideoController.h */; };
+		6B6E99101B39DE0900BEEFB6 /* BKVideoPreviewWrapperView.m in Sources */ = {isa = PBXBuildFile; fileRef = 6B6E990F1B39DE0900BEEFB6 /* BKVideoPreviewWrapperView.m */; };
 		6BEE0A8F1987255200D73B41 /* BKCameraController.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 6BEE0A8E1987255200D73B41 /* BKCameraController.h */; };
 		6BEE0A911987255200D73B41 /* BKCameraController.m in Sources */ = {isa = PBXBuildFile; fileRef = 6BEE0A901987255200D73B41 /* BKCameraController.m */; };
 /* End PBXBuildFile section */
@@ -19,6 +22,7 @@
 			dstPath = "include/$(PRODUCT_NAME)";
 			dstSubfolderSpec = 16;
 			files = (
+				6B6E990D1B39D0BB00BEEFB6 /* BKVideoController.h in CopyFiles */,
 				6BEE0A8F1987255200D73B41 /* BKCameraController.h in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -28,6 +32,11 @@
 /* Begin PBXFileReference section */
 		6B4F31B6198B10C7009B4667 /* BKCameraController+Simulator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "BKCameraController+Simulator.h"; sourceTree = "<group>"; };
 		6B4F31B7198B10C7009B4667 /* BKCameraController+Simulator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "BKCameraController+Simulator.m"; sourceTree = "<group>"; };
+		6B6E99091B38C57300BEEFB6 /* BKVideoController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BKVideoController.h; sourceTree = "<group>"; };
+		6B6E990A1B38C57300BEEFB6 /* BKVideoController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BKVideoController.m; sourceTree = "<group>"; };
+		6B6E990C1B39C59800BEEFB6 /* BKCameraController_Internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BKCameraController_Internal.h; sourceTree = "<group>"; };
+		6B6E990E1B39DE0900BEEFB6 /* BKVideoPreviewWrapperView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BKVideoPreviewWrapperView.h; sourceTree = "<group>"; };
+		6B6E990F1B39DE0900BEEFB6 /* BKVideoPreviewWrapperView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BKVideoPreviewWrapperView.m; sourceTree = "<group>"; };
 		6BEE0A8B1987255200D73B41 /* libBKCameraController.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libBKCameraController.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		6BEE0A8E1987255200D73B41 /* BKCameraController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BKCameraController.h; sourceTree = "<group>"; };
 		6BEE0A901987255200D73B41 /* BKCameraController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BKCameraController.m; sourceTree = "<group>"; };
@@ -67,6 +76,11 @@
 				6B4F31B7198B10C7009B4667 /* BKCameraController+Simulator.m */,
 				6BEE0A8E1987255200D73B41 /* BKCameraController.h */,
 				6BEE0A901987255200D73B41 /* BKCameraController.m */,
+				6B6E990C1B39C59800BEEFB6 /* BKCameraController_Internal.h */,
+				6B6E99091B38C57300BEEFB6 /* BKVideoController.h */,
+				6B6E990A1B38C57300BEEFB6 /* BKVideoController.m */,
+				6B6E990E1B39DE0900BEEFB6 /* BKVideoPreviewWrapperView.h */,
+				6B6E990F1B39DE0900BEEFB6 /* BKVideoPreviewWrapperView.m */,
 			);
 			path = BKCameraController;
 			sourceTree = "<group>";
@@ -127,8 +141,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6B6E99101B39DE0900BEEFB6 /* BKVideoPreviewWrapperView.m in Sources */,
 				6B4F31B8198B10C7009B4667 /* BKCameraController+Simulator.m in Sources */,
 				6BEE0A911987255200D73B41 /* BKCameraController.m in Sources */,
+				6B6E990B1B38C57300BEEFB6 /* BKVideoController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -212,6 +228,7 @@
 		6BEE0AA01987255200D73B41 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = "$(SRCROOT)";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -221,6 +238,7 @@
 		6BEE0AA11987255200D73B41 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = "$(SRCROOT)";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
