@@ -12,6 +12,7 @@
 
 /** Completion callback invoked upon movie capture. */
 typedef void (^movie_capture_completion_t)(NSURL *outputUrl, NSError *error);
+typedef void(^movie_stop_block_t)();
 
 @protocol BKVideoControllerDelegate <BKCameraControllerDelegate>
 
@@ -35,6 +36,6 @@ typedef void (^movie_capture_completion_t)(NSURL *outputUrl, NSError *error);
                 thumbnailCaptureEnabled:(BOOL)thumbnailCaptureEnabled
      subjectAreaChangeMonitoringEnabled:(BOOL)subjectAreaChangeMonitoringEnabled;
 
-- (void)captureWithThumbnailBlock:(ciimage_capture_completion_t)thumbnailBlock completion:(movie_capture_completion_t)completion;
+- (movie_stop_block_t)captureWithThumbnailBlock:(ciimage_capture_completion_t)thumbnailBlock completion:(movie_capture_completion_t)completion;
 
 @end

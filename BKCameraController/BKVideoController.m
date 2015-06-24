@@ -76,12 +76,12 @@
 
 #pragma mark - Capture
 
-- (void)captureWithThumbnailBlock:(ciimage_capture_completion_t)thumbnailBlock completion:(movie_capture_completion_t)completion
+- (movie_stop_block_t)captureWithThumbnailBlock:(ciimage_capture_completion_t)thumbnailBlock completion:(movie_capture_completion_t)completion
 {
     // If previous _recording value was 1, return
     // Else, _recording value is now 1; continue
     if (OSAtomicTestAndSet(0, &_recording)) {
-        return;
+        return ^{};
     }
 
     // Capture thumbnail if applicable
@@ -96,8 +96,16 @@
         _completion = completionCopy;
         NSURL *outputUrl = [self _makeTemporaryMovieURL];
 
-        [_movieFileOutput startRecordingToOutputFileURL:outputUrl recordingDelegate:self];
+        [self.movieFileOutput startRecordingToOutputFileURL:outputUrl recordingDelegate:self];
     });
+
+    __typeof__(self) __weak weakSelf = self;
+    return [^{
+        __typeof__(weakSelf) __strong strongSelf = weakSelf;
+        dispatch_async(strongSelf.avQueue, ^{
+            [strongSelf.movieFileOutput stopRecording];
+        });
+    } copy];
 }
 
 #pragma mark - Private
@@ -131,8 +139,8 @@
     OSAtomicTestAndClear(0, &_recording);
 
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (_completion) {
-            _completion(outputFileURL, error);
+        if (self.completion) {
+            self.completion(outputFileURL, error);
         }
 
         if ([self.delegate respondsToSelector:@selector(videoControllerDidStopRecording:)]) {
@@ -140,7 +148,7 @@
         }
     });
 
-    _completion = nil;
+    self.completion = nil;
 }
 
 @end
