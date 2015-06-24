@@ -12,6 +12,10 @@ typedef void (^ciimage_capture_completion_t)(CIImage *image, NSError *error);
 /** Completion callback invoked upon asset capture. */
 typedef void (^asset_capture_completion_t)(NSURL *assetURL, NSError *error);
 
+/** Authorization callback invoked upon camera authorization or denial. */
+typedef void (^request_authorization_block_t)(BOOL granted, NSError *error);
+
+
 /**
  A wrapper for AVCaptureSession to simplify the process of capturing photos.
  */
@@ -34,6 +38,9 @@ typedef void (^asset_capture_completion_t)(NSURL *assetURL, NSError *error);
 @property (nonatomic, assign, readonly) BOOL flashCapable;
 /** Whether the session should monitor subject area changes. See <AVCaptureDevice> */
 @property (nonatomic, assign, readonly) BOOL subjectAreaChangeMonitoringEnabled;
+/** The camera's authorization */
+@property (nonatomic, assign, readonly) AVAuthorizationStatus authorization;
+
 /** @name Initializing a BKCameraController object  */
 
 /**
@@ -55,6 +62,10 @@ typedef void (^asset_capture_completion_t)(NSURL *assetURL, NSError *error);
  */
 - (instancetype)initWithInitialPosition:(AVCaptureDevicePosition)position
                        autoFlashEnabled:(BOOL)autoFlashEnabled;
+
+/** @name Requesting Camera Permissions */
+
+- (void)requestAuthorization:(request_authorization_block_t)authorizeBlock;
 
 /** @name Starting/Stopping Capture Session State  */
 

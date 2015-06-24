@@ -13,6 +13,8 @@
 
 @interface BKCameraController ()
 
+@property (nonatomic, assign, readwrite) AVAuthorizationStatus authorization;
+
 @property (nonatomic, strong, readonly) dispatch_queue_t avQueue;
 
 #pragma mark - State

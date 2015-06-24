@@ -21,10 +21,12 @@
                           sessionPreset:(NSString *)preset
 {
     if (self = [super init]) {
+        _authorization = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo];
+
         _avQueue = dispatch_queue_create("com.github.basket.bkcameracontroller.avqueue", DISPATCH_QUEUE_SERIAL);
         _session = [[AVCaptureSession alloc] init];
-
         _position = position;
+
         _autoFlashEnabled = autoFlashEnabled;
         _subjectAreaChangeMonitoringEnabled = subjectAreaChangeMonitoringEnabled;
         _sessionPreset = [preset copy];
@@ -71,6 +73,66 @@
 - (void)dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+#pragma mark - Access
+
+- (void)requestAuthorization:(request_authorization_block_t)authorizeBlock
+{
+    // Strictly speaking, this may not *need* to be avQueue-affined, but for the sake of not having to work out operation ordering, it is.
+    dispatch_async(self.avQueue, ^{
+        AVAuthorizationStatus authorization = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo];
+        switch (authorization) {
+            case AVAuthorizationStatusAuthorized: {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    self.authorization = authorization;
+                    if (authorizeBlock) {
+                        authorizeBlock(YES, nil);
+                    }
+                });
+            }
+                break;
+            case AVAuthorizationStatusNotDetermined: {
+                [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        NSError *error = nil;
+                        if (granted) {
+                            self.authorization = AVAuthorizationStatusAuthorized;
+                        } else {
+                            self.authorization = AVAuthorizationStatusDenied;
+                            // TODO set NSError
+                        }
+                        if (authorizeBlock) {
+                            authorizeBlock(granted, error);
+                        }
+                    });
+                }];
+            }
+                break;
+            case AVAuthorizationStatusDenied: {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    self.authorization = authorization;
+                    // TODO set NSError
+                    NSError *error = nil;
+                    if (authorizeBlock) {
+                        authorizeBlock(NO, error);
+                    }
+                });
+            }
+                break;
+            case AVAuthorizationStatusRestricted: {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    self.authorization = authorization;
+                    // TODO set NSError
+                    NSError *error = nil;
+                    if (authorizeBlock) {
+                        authorizeBlock(NO, error);
+                    }
+                });
+            }
+                break;
+        }
+    });
 }
 
 #pragma mark - Capture session lifecycle methods
