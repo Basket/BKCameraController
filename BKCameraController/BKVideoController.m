@@ -99,11 +99,9 @@
         [self.movieFileOutput startRecordingToOutputFileURL:outputUrl recordingDelegate:self];
     });
 
-    __typeof__(self) __weak weakSelf = self;
     return [^{
-        __typeof__(weakSelf) __strong strongSelf = weakSelf;
-        dispatch_async(strongSelf.avQueue, ^{
-            [strongSelf.movieFileOutput stopRecording];
+        dispatch_async(self.avQueue, ^{
+            [self.movieFileOutput stopRecording];
         });
     } copy];
 }
@@ -112,14 +110,17 @@
 
 - (NSURL *)_makeTemporaryMovieURL
 {
-    NSUUID *uuid = [NSUUID UUID];
-    NSString *filename = [NSString stringWithFormat:@"temp-%@.mov", uuid.UUIDString];
+    NSFileManager *fileManager = [[NSFileManager alloc] init];
 
-    NSString *movieDir = [NSTemporaryDirectory() stringByAppendingPathComponent:@"BKCameraController"];
-    NSString *moviePath = [movieDir stringByAppendingPathComponent:filename];
-
-    NSURL *outputUrl = [NSURL fileURLWithPath:moviePath isDirectory:NO];
-
+    NSError *error;
+    NSURL *cacheDir = [fileManager URLForDirectory:NSCachesDirectory
+                                          inDomain:NSUserDomainMask
+                                   appropriateForURL:nil
+                                              create:YES
+                                               error:&error];
+    NSAssert(error == nil, @"Error: %@", error);
+    NSString *filename = [NSString stringWithFormat:@"BKCameraController-temp-%@.mov", [NSUUID UUID].UUIDString];
+    NSURL *outputUrl = [cacheDir URLByAppendingPathComponent:filename];
     return outputUrl;
 }
 
