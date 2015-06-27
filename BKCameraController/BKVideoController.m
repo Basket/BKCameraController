@@ -17,7 +17,7 @@
 @property (nonatomic, strong, readonly) AVCaptureDeviceInput *audioDeviceInput;
 @property (nonatomic, strong, readonly) AVCaptureMovieFileOutput *movieFileOutput;
 
-@property (nonatomic, copy) movie_capture_completion_t completion;
+@property (atomic, copy) movie_capture_completion_t completion;
 
 @end
 
@@ -89,11 +89,10 @@
         [self captureSampleWithCompletion:thumbnailBlock];
     }
 
-    movie_capture_completion_t completionCopy = [completion copy];
+    self.completion = completion;
 
     // Start capturing movie file
     dispatch_async(self.avQueue, ^{
-        _completion = completionCopy;
         NSURL *outputUrl = [self _makeTemporaryMovieURL];
 
         [self.movieFileOutput startRecordingToOutputFileURL:outputUrl recordingDelegate:self];
@@ -143,13 +142,12 @@
         if (self.completion) {
             self.completion(outputFileURL, error);
         }
+        self.completion = nil;
 
         if ([self.delegate respondsToSelector:@selector(videoControllerDidStopRecording:)]) {
             [self.delegate videoControllerDidStopRecording:self];
         }
     });
-
-    self.completion = nil;
 }
 
 @end
